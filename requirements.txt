@@ -1,0 +1,15 @@
+# 运行 Web 应用所需依赖。训练脚本的额外依赖见 requirements-train.txt
+flask>=2.0
+pandas
+numpy
+scikit-learn
+xgboost>=1.6
+joblib
+matplotlib
+pillow
+shap
+xlsxwriter          # 批量预测导出 Excel
+
+# MRI 影像分支。不装 torch 的话应用照常启动，只是退化成纯结构化预测。
+torch
+torchvision

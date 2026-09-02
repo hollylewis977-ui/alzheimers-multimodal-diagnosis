@@ -1,0 +1,46 @@
+# ===== 模型权重 =====
+# best_model.pth 282MB、四个 .h5 共 450MB，都超过 GitHub 单文件 100MB 上限。
+# 注意写成 目录/* 而不是 目录/ —— 否则下面的 ! 例外规则不生效
+# （Git 不能重新包含一个被排除目录下的文件）。
+artifacts/models/*
+!artifacts/models/README.md
+
+# ===== 运行时产物 =====
+# 批量预测每跑一次就重新生成，没有必要进版本库
+artifacts/outputs/*
+!artifacts/outputs/README.md
+artifacts/.mpl-cache/
+
+# ===== 数据集 =====
+# MRI 切片 113MB + 患者 CSV，见 README「数据准备」一节
+data/*
+!data/README.md
+
+# artifacts/config/ 下的小配置照常入库，应用启动需要它们
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# ===== 编辑器与系统 =====
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== 存档目录里的模型副本 =====
+# legacy/xgb_app/artifacts/ 下那份 .pkl 与 artifacts/models/ 里的是同一个文件
+# （md5 一致），按「模型权重一律不入库」的规则同样排除
+legacy/**/*.pkl
+legacy/**/*.pth
+legacy/**/*.h5

@@ -1,0 +1,18 @@
+{
+  "class_names": [
+    "AD",
+    "CN"
+  ],
+  "train_counts": [
+    2230,
+    1307
+  ],
+  "val_counts": [
+    550,
+    334
+  ],
+  "test_counts": [
+    730,
+    375
+  ]
+}

@@ -1,0 +1,5 @@
+# 训练脚本的额外依赖，在 requirements.txt 之上安装：
+#   pip install -r requirements.txt -r requirements-train.txt
+imbalanced-learn    # scripts/train_xgb.py 的过采样 / 欠采样
+tensorflow          # scripts/train_mri_vgg.py 的 VGG16 训练
+seaborn             # 训练脚本画混淆矩阵

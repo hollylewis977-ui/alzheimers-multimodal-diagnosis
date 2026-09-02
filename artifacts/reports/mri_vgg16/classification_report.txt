@@ -1,0 +1,12 @@
+== TEST METRICS ==
+AUC: 0.8322
+F1-score (macro): 0.8119
+
+              precision    recall  f1-score   support
+
+          AD     0.9762    0.6949    0.8119        59
+          CN     0.3333    0.9000    0.4865        10
+
+    accuracy                         0.7246        69
+   macro avg     0.6548    0.7975    0.6492        69
+weighted avg     0.8830    0.7246    0.7647        69

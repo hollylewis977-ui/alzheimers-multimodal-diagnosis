@@ -1,0 +1,11 @@
+# 统一在仓库里存 LF，检出时各平台自便，避免 Windows/Linux 之间整文件 diff
+* text=auto
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pkl binary
+*.pth binary
+*.h5  binary
+*.xlsx binary
+*.zip binary

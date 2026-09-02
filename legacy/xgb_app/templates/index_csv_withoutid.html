@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Alzheimer's Disease Risk Predictor</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
+    <style>
+        body {
+            background: #f8fafc;
+        }
+
+        .card {
+            border-radius: 1rem;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            margin-top: .25rem;
+            margin-bottom: .75rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            grid-gap: 14px;
+        }
+
+        .badge-pill {
+            font-size: 0.85rem;
+        }
+
+        .sticky-actions {
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+            padding-top: .75rem;
+        }
+
+        .small-note {
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .tableFixHead {
+            overflow-y: auto;
+            max-height: 420px;
+        }
+
+        .tableFixHead thead th {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 1;
+        }
+
+        .shap-wrap {
+            border: 1px dashed #cbd5e1;
+            border-radius: .75rem;
+            padding: .75rem;
+            background: #fff;
+        }
+    </style>
+</head>
+<body class="container py-4">
+<h3 class="mb-3">Alzheimer's Disease Risk — Online Screening</h3>
+<p class="text-muted mb-4">
+    Front-end validation matches the training CSV (fixed enums & ranges). Gender is restricted to Male/Female.
+    BMI is bounded. CSV batch upload shows per-row prediction & probability; if the backend returns Excel,
+    the UI falls back to a direct download.
+</p>
+
+<div class="row">
+    <!-- Left: single prediction form -->
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="form-section-title">Input Features</div>
+                <form id="predictForm" class="grid-2">
+                    <!-- Age 60-100 -->
+                    <div>
+                        <label>Age</label>
+                        <input class="form-control" name="Age" type="number" min="60" max="100" step="1" required/>
+                        <div class="small-note">Range: 60—100 (suggested)</div>
+                    </div>
+
+                    <!-- Gender Male/Female -> 0/1 -->
+                    <div>
+                        <label>Gender</label>
+                        <select class="form-control" name="Gender" required>
+                            <option value="">Select…</option>
+                            <option value="0">Male</option>
+                            <option value="1">Female</option>
+                        </select>
+                        <div class="small-note">Only Male/Female selectable</div>
+                    </div>
+
+                    <!-- Ethnicity 0-3 -->
+                    <div>
+                        <label>Ethnicity</label>
+                        <select class="form-control" name="Ethnicity" required>
+                            <option value="">Select…</option>
+                            <option value="0">White</option>
+                            <option value="1">African American</option>
+                            <option value="2">Asian</option>
+                            <option value="3">Other</option>
+                        </select>
+                    </div>
+
+                    <!-- EducationLevel 0-3 -->
+                    <div>
+                        <label>Education Level</label>
+                        <select class="form-control" name="EducationLevel" required>
+                            <option value="">Select…</option>
+                            <option value="0">None</option>
+                            <option value="1">Primary</option>
+                            <option value="2">Secondary</option>
+                            <option value="3">Tertiary</option>
+                        </select>
+                    </div>
+
+                    <!-- BMI 15-40 slider + number -->
+                    <div>
+                        <label>BMI (15—40)</label>
+                        <input class="form-control" id="bmiRange" type="range" min="15" max="40" step="0.1" value="22"/>
+                        <input class="form-control mt-1" name="BMI" type="number" min="15" max="40" step="0.1"
+                               value="22" required/>
+                        <div class="small-note">Use the slider or type directly</div>
+                    </div>
+
+                    <!-- Smoking 0/1 -->
+                    <div>
+                        <label>Smoking</label>
+                        <select class="form-control" name="Smoking" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+
+                    <!-- Lifestyle scores -->
+                    <div>
+                        <label>Alcohol Consumption (per week)</label>
+                        <input class="form-control" name="AlcoholConsumption" type="number" min="0" max="20" step="1"
+                               value="0" required/>
+                        <div class="small-note">Range: 0—20 (weekly units)</div>
+                    </div>
+                    <div>
+                        <label>Physical Activity (0—10)</label>
+                        <input class="form-control" name="PhysicalActivity" type="number" min="0" max="10" step="0.5"
+                               value="0" required/>
+                    </div>
+                    <div>
+                        <label>Diet Quality (0—10)</label>
+                        <input class="form-control" name="DietQuality" type="number" min="0" max="10" step="1" value="5"
+                               required/>
+                    </div>
+                    <div>
+                        <label>Sleep Quality/Hours (4—10)</label>
+                        <input class="form-control" name="SleepQuality" type="number" min="4" max="10" step="0.5"
+                               value="7" required/>
+                    </div>
+
+                    <!-- BP & lipids -->
+                    <div>
+                        <label>Systolic BP</label>
+                        <input class="form-control" name="SystolicBP" type="number" min="80" max="200" step="1"
+                               required/>
+                        <div class="small-note">Typical: 90—180 (buffered 80—200)</div>
+                    </div>
+                    <div>
+                        <label>Diastolic BP</label>
+                        <input class="form-control" name="DiastolicBP" type="number" min="50" max="130" step="1"
+                               required/>
+                        <div class="small-note">Typical: 60—120 (buffered 50—130)</div>
+                    </div>
+                    <div>
+                        <label>Total Cholesterol</label>
+                        <input class="form-control" name="CholesterolTotal" type="number" min="120" max="360" step="1"
+                               required/>
+                        <div class="small-note">Typical: 150—300</div>
+                    </div>
+                    <div>
+                        <label>LDL</label>
+                        <input class="form-control" name="CholesterolLDL" type="number" min="40" max="240" step="1"
+                               required/>
+                    </div>
+                    <div>
+                        <label>HDL</label>
+                        <input class="form-control" name="CholesterolHDL" type="number" min="10" max="120" step="1"
+                               required/>
+                    </div>
+                    <div>
+                        <label>Triglycerides</label>
+                        <input class="form-control" name="CholesterolTriglycerides" type="number" min="30" max="800"
+                               step="1" required/>
+                        <div class="small-note">Typical: 50—400 (here 30—800)</div>
+                    </div>
+
+                    <!-- Clinical scales -->
+                    <div>
+                        <label>MMSE (0—30)</label>
+                        <input class="form-control" name="MMSE" type="number" min="0" max="30" step="1" required/>
+                    </div>
+                    <div>
+                        <label>Functional Assessment (0—10)</label>
+                        <input class="form-control" name="FunctionalAssessment" type="number" min="0" max="10" step="1"
+                               required/>
+                    </div>
+                    <div>
+                        <label>ADL (0—10)</label>
+                        <input class="form-control" name="ADL" type="number" min="0" max="10" step="1" required/>
+                    </div>
+
+                    <!-- Symptoms: 0/1 -->
+                    <div>
+                        <label>Memory Complaints</label>
+                        <select class="form-control" name="MemoryComplaints" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Behavioral Problems</label>
+                        <select class="form-control" name="BehavioralProblems" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Confusion</label>
+                        <select class="form-control" name="Confusion" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Disorientation</label>
+                        <select class="form-control" name="Disorientation" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Personality Changes</label>
+                        <select class="form-control" name="PersonalityChanges" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Difficulty Completing Tasks</label>
+                        <select class="form-control" name="DifficultyCompletingTasks" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Forgetfulness</label>
+                        <select class="form-control" name="Forgetfulness" required>
+                            <option value="">Select…</option>
+                            <option value="0">No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+
+                    <div class="sticky-actions mt-1 pt-2 border-top">
+                        <button type="submit" class="btn btn-primary">Predict Single Case</button>
+                        <span id="singleStatus" class="ml-2 small-note"></span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Single result -->
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <h5 class="card-title">Single Prediction Result</h5>
+                <div id="singleResult" class="lead">—</div>
+                <div id="singleProb" class="text-muted mb-3">—</div>
+
+                <div class="d-flex align-items-center mb-2">
+                    <h6 class="mb-0">SHAP (this case)</h6>
+                    <span class="small-note ml-2">Auto-rendered after prediction</span>
+                </div>
+                <div id="singleShap" class="shap-wrap text-center small-note">Predict to see SHAP</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: CSV batch prediction -->
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="form-section-title">CSV Batch Prediction</div>
+
+                <div class="form-group">
+                    <a href="/download_template" class="btn btn-info">
+                        📥 Download CSV Template
+                    </a>
+                    <small class="form-text text-muted">Download a sample CSV file with all required columns and proper
+                        format.</small>
+                </div>
+
+                <form id="batchForm">
+                    <div class="form-group">
+                        <input type="file" class="form-control-file" name="file" accept=".csv" required/>
+                        <small class="form-text text-muted">Upload a CSV containing all required training
+                            columns.</small>
+                    </div>
+                    <button type="submit" class="btn btn-success">Upload & Predict</button>
+                    <span id="batchStatus" class="ml-2 small-note"></span>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Batch Results</h5>
+                <div class="tableFixHead">
+                    <table class="table table-sm table-hover" id="batchTable">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Prediction</th>
+                            <th>RiskProbability</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="small-note">
+                    Sorted by probability (desc). If backend still returns an Excel file, UI will fall back to a direct
+                    download.
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <h5 class="card-title mb-2">Batch SHAP Summary</h5>
+                <div id="batchShap" class="shap-wrap text-center small-note">Upload CSV to see global SHAP summary</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // helpers
+    function renderBase64PNG(targetId, base64Str) {
+        const el = document.getElementById(targetId);
+        if (!el) return;
+        if (!base64Str) {
+            el.innerHTML = '<span class="small-note">No SHAP image returned.</span>';
+            return;
+        }
+        const img = new Image();
+        img.alt = 'SHAP plot';
+        img.className = 'img-fluid rounded';
+        img.src = 'data:image/png;base64,' + base64Str;
+        el.innerHTML = '';
+        el.appendChild(img);
+    }
+
+    // BMI slider <-> input sync
+    const bmiRange = document.getElementById('bmiRange');
+    const bmiInput = document.querySelector('input[name="BMI"]');
+    if (bmiRange && bmiInput) {
+        bmiRange.addEventListener('input', () => {
+            bmiInput.value = bmiRange.value;
+        });
+        bmiInput.addEventListener('input', () => {
+            const v = parseFloat(bmiInput.value);
+            if (!isNaN(v)) {
+                if (v < 15) bmiInput.value = 15;
+                if (v > 40) bmiInput.value = 40;
+                bmiRange.value = bmiInput.value;
+            }
+        });
+    }
+
+    // Single prediction
+    document.getElementById('predictForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const status = document.getElementById('singleStatus');
+        status.textContent = 'Predicting…';
+
+        const fd = new FormData(e.currentTarget);
+        const payload = {};
+        fd.forEach((v, k) => {
+            payload[k] = isFinite(v) ? Number(v) : v;
+        });
+
+        try {
+            const res = await fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            const pred = Number(data.prediction) === 1;
+            const prob = Number(data.probability || data.prob || 0) * 100;
+            document.getElementById('singleResult').innerHTML = pred
+                    ? '<span class="badge badge-danger badge-pill">At Risk</span>'
+                    : '<span class="badge badge-success badge-pill">Not at Risk</span>';
+            document.getElementById('singleProb').textContent = `Confidence (Disease Probability): ${prob.toFixed(2)}%`;
+            status.textContent = 'Done';
+
+            // SHAP image for single sample (expect base64 string from backend)
+            const singleB64 = data.shap_plot || data.shap_force || data.shap_png || data.shap_img || data.shap;
+            renderBase64PNG('singleShap', singleB64);
+        } catch (err) {
+            console.error(err);
+            status.textContent = 'Error: ' + (err.message || 'Failed to predict');
+        }
+    });
+
+    // Batch prediction (try JSON endpoint first; fallback to Excel download)
+    document.getElementById('batchForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const status = document.getElementById('batchStatus');
+        status.textContent = 'Uploading & predicting…';
+        const tbody = document.querySelector('#batchTable tbody');
+        tbody.innerHTML = '';
+
+        const fd = new FormData(e.currentTarget);
+
+        let usedFallback = false;
+        try {
+            const res = await fetch('/batch_predict_json', {method: 'POST', body: fd});
+            if (res.ok) {
+                const ct = res.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    const payload = await res.json();
+                    const idField = payload.id_field || '#';
+                    const data = payload.rows || [];
+
+                    // Update header with actual id field name
+                    document.querySelector('#batchTable thead tr').innerHTML =
+                            `<th>${idField}</th><th>Prediction</th><th>RiskProbability</th>`;
+
+                    // Render rows sorted by probability
+                    data
+                            .map(r => ({
+                                id: r[idField],
+                                pred: Number(r.Prediction) === 1,
+                                prob: Number(r.RiskProbability || 0)
+                            }))
+                            .sort((a, b) => b.prob - a.prob)
+                            .forEach(r => {
+                                const tr = document.createElement('tr');
+                                const label = r.pred
+                                        ? '<span class="badge badge-danger badge-pill">At Risk</span>'
+                                        : '<span class="badge badge-success badge-pill">Not at Risk</span>';
+                                tr.innerHTML = `<td>${r.id}</td><td>${label}</td><td>${(r.prob*100).toFixed(2)}%</td>`;
+                                tbody.appendChild(tr);
+                            });
+
+                    // SHAP summary image for batch (expect base64 string from backend)
+                    const summaryB64 = payload.shap_summary || payload.shap_summary_plot || payload.shap_plot || payload.shap;
+                    renderBase64PNG('batchShap', summaryB64);
+
+                    status.textContent = `Done (${data.length} rows)`;
+                } else {
+                    usedFallback = true;
+                }
+            } else {
+                usedFallback = true;
+            }
+        } catch (_) {
+            usedFallback = true;
+        }
+
+        // Fallback: legacy Excel download
+        if (usedFallback) {
+            status.textContent = 'Backend returns Excel. Please use the legacy download…';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-outline-secondary btn-sm ml-2';
+            btn.textContent = 'Use legacy Excel download';
+            btn.onclick = () => {
+                const fallbackForm = document.createElement('form');
+                fallbackForm.action = '/batch_predict';
+                fallbackForm.method = 'POST';
+                fallbackForm.enctype = 'multipart/form-data';
+                const fallbackFile = document.createElement('input');
+                fallbackFile.type = 'file';
+                fallbackFile.name = 'file';
+                fallbackFile.accept = '.csv';
+                fallbackFile.onchange = () => fallbackForm.submit();
+                fallbackForm.appendChild(fallbackFile);
+                document.body.appendChild(fallbackForm);
+                fallbackFile.click();
+            };
+            status.appendChild(btn);
+        }
+    });
+</script>
+</body>
+</html>
